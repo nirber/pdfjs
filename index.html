@@ -184,12 +184,12 @@ document.querySelector('#preview').setAttribute('src', doc.toDataURL())
   }
   
   var openSans = {
-    regular:     '/fonts/open-sans/OpenSans-Regular.ttf',
-    italic:      '/fonts/open-sans/OpenSans-Italic.ttf',
-    bold:        '/fonts/open-sans/OpenSans-Bold.ttf',
-    boldItalic:  '/fonts/open-sans/OpenSans-BoldItalic.ttf',
-    light:       '/fonts/open-sans/OpenSans-Light.ttf',
-    lightItalic: '/fonts/open-sans/OpenSans-LightItalic.ttf'
+    regular:     'fonts/open-sans/OpenSans-Regular.ttf',
+    italic:      'fonts/open-sans/OpenSans-Italic.ttf',
+    bold:        'fonts/open-sans/OpenSans-Bold.ttf',
+    boldItalic:  'fonts/open-sans/OpenSans-BoldItalic.ttf',
+    light:       'fonts/open-sans/OpenSans-Light.ttf',
+    lightItalic: 'fonts/open-sans/OpenSans-LightItalic.ttf'
   }
   
   var keys = Object.keys(openSans)
@@ -199,7 +199,7 @@ document.querySelector('#preview').setAttribute('src', doc.toDataURL())
       if (err) throw err
       openSans[key] = buffer
       if (--count === 0) {
-        loadFont('/fonts/SourceCodePro-Medium.ttf', function(err, sourceCodePro) {
+        loadFont('fonts/SourceCodePro-Medium.ttf', function(err, sourceCodePro) {
           if (err) throw err
           build(new Pdfjs.Font(openSans), new Pdfjs.Font(sourceCodePro))
         })
