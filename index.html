@@ -6,6 +6,10 @@ layout: layout
 
 <a href="https://github.com/rkusa/pdfjs/blob/master/README.md">View API Docs</a>, <a href="#source">View Example Source</a>
 
+<div id="progress" class="progress progress-striped active">
+  <div class="progress-bar" id="progressbar"></div>
+</div>
+
 <iframe id="preview" width="100%" height="650" frameborder="0"></iframe>
 
 <a name="source"></a>
@@ -183,6 +187,8 @@ document.querySelector('#preview').setAttribute('src', doc.toDataURL())
     document.querySelector('#preview').setAttribute('src', doc.toDataURL())
   }
   
+  var steps = 8, step = 0, progressbar = document.querySelector('#progressbar')
+  
   var openSans = {
     regular:     'fonts/open-sans/OpenSans-Regular.ttf',
     italic:      'fonts/open-sans/OpenSans-Italic.ttf',
@@ -195,13 +201,20 @@ document.querySelector('#preview').setAttribute('src', doc.toDataURL())
   var keys = Object.keys(openSans)
     , count = keys.length
   keys.forEach(function(key) {
+    progressbar.innerHTML = 'Loading Font OpenSans'
     loadFont(openSans[key], function(err, buffer) {
       if (err) throw err
+      progressbar.setAttribute('style', 'width: ' + Math.round(++step / steps * 100) + '%')
       openSans[key] = buffer
       if (--count === 0) {
+        progressbar.innerHTML = 'Loading Font Source Code Pro'
         loadFont('fonts/SourceCodePro-Medium.ttf', function(err, sourceCodePro) {
           if (err) throw err
+          progressbar.setAttribute('style', 'width: ' + Math.round(++step / steps * 100) + '%')
+          progressbar.innerHTML = 'Render PDF'
           build(new Pdfjs.Font(openSans), new Pdfjs.Font(sourceCodePro))
+          progressbar.setAttribute('style', 'width: ' + Math.round(++step / steps * 100) + '%')
+          document.querySelector('#progress').setAttribute('style', 'display:none')
         })
       }
     })
