@@ -92,6 +92,7 @@ document.querySelector('#preview').setAttribute('src', doc.toDataURL())
 <script type="text/javascript">
   function loadFont(path, callback) {
     var request = new XMLHttpRequest()
+    request.open('GET', path, true)
     request.responseType = 'arraybuffer'
 
     if (request.overrideMimeType) {
@@ -108,7 +109,6 @@ document.querySelector('#preview').setAttribute('src', doc.toDataURL())
       }
     }
 
-    request.open('GET', path, true)
     request.send(null)
   }
   
