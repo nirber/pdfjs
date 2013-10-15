@@ -16,8 +16,9 @@ Operation.prototype.render = function(page, width) {
 }
 },{}],2:[function(require,module,exports){
 module.exports = function(opts, definition) {
-  this.contents.push(new Table(this, opts, definition))
-  return this
+  var table = new Table(this, opts, definition)
+  this.contents.push(table)
+  return table
 }
 
 var utils = require('../utils')
@@ -41,17 +42,19 @@ var Table = function(doc, opts, definition) {
   }
   
   this.doc  = doc.doc || doc
-  this.opts = opts
+  this.opts = opts || {}
   
   mergeOption(defaults, this.opts)
   
   this.rows = []
   
-  definition.call(this, this)
+  if (definition) definition.call(this, this)
 }
 
 Table.prototype.tr = function(opts, definition) {
-  this.rows.push(new Row(this, opts, definition))
+  var row = new Row(this, opts, definition)
+  this.rows.push(row)
+  return row
 }
 
 Table.prototype.render = function(page, width) {
@@ -136,13 +139,13 @@ var Row = function(table, opts, definition) {
   
   this.table = table
   this.doc   = table.doc
-  this.opts  = mergeOption(table.opts, opts)
+  this.opts  = mergeOption(table.opts, opts || {})
   
   this.cells = []
 
   this.allowBreak = false
   
-  definition.call(this, this)
+  if (definition) definition.call(this, this)
 }
 
 Object.defineProperties(Row.prototype, {
@@ -161,6 +164,11 @@ Object.defineProperties(Row.prototype, {
 })
 
 Row.prototype.td = function(text, opts) {
+  if (typeof text === 'object') {
+    var fn = opts
+    opts = text
+    text = fn
+  }
   var cell = new Cell(this, text, opts)
   this.cells.push(cell)
   return cell
@@ -432,7 +440,7 @@ module.exports = function(string, opts) {
 
   this.contents.push(text)
 
-  return this
+  return text.textFn
 }
 
 var Text = module.exports.Text = function(doc, opts) {
@@ -551,7 +559,7 @@ Text.prototype.render = function(page, width) {
     
     page.cursor.y -= lineHeight * ((self.opts.lineSpacing || 1) - 1)
   }
-    
+  
   this.contents.forEach(function(word, i) {
     var wordWidth = word.width, wordSpacing = !line.length || word.isStartingWithPunctuation ? 0 : word.spacing
     
@@ -667,12 +675,11 @@ var PDFObject = require('./objects/object')
   , PDFName   = require('./objects/name')
   , utils = require('./utils')
 
-var Document = module.exports = function Document(font) {
+var Document = module.exports = function Document(font, opts) {
   this.version = 1.7
   
   // list of all objects in this document
   this.objects   = []
-  this.nextObjId = 1
   
   // list of all fonts in this document
   this.fonts       = []
@@ -680,8 +687,10 @@ var Document = module.exports = function Document(font) {
   this.defaultFont = this.registerFont(font)
   
   // call parents constructor
-  Document.super_.call(this, this)
-  this.height = 792
+  if (!opts) opts = {}
+  if (!opts.padding) opts.padding = { top: 20, right: 40, bottom: 20, left: 40 }
+  Document.super_.call(this, this, opts)
+  this.height = this.opts.height || 792
   
   // the catalog and pages tree
   this.catalog = this.createObject('Catalog')
@@ -702,6 +711,7 @@ Document.Font = Font
       definition = opts
       opts = {}
     }
+    if (!opts.padding) opts.padding = { top: 0, right: this.padding.right, bottom: 0, left: this.padding.left }
     this.areas[area] = new Fragment(this, opts)
     if (typeof definition === 'function') {
       definition.call(this.areas[area], this.areas[area])
@@ -721,7 +731,7 @@ Document.prototype.registerFont = function(font) {
 }
 
 Document.prototype.createObject = function(type) {
-  var object = new PDFObject(this.nextObjId++, 0)
+  var object = new PDFObject()
   if (type) object.addProperty('Type', type)
   this.objects.push(object)
   return object
@@ -738,7 +748,7 @@ Document.prototype.pagebreak = function() {
   var page = this.cursor = this.pages.addPage()
   if (this.areas.header) {
     this.areas.header.height = 0
-    this.areas.header.render(page, this.innerWidth)
+    this.areas.header.render(page, this.idth)
     this.areas.header.height = this.height - page.cursor.y - this.opts.padding.top
   }
   if (this.areas.footer) {
@@ -746,11 +756,11 @@ Document.prototype.pagebreak = function() {
       , transaction = this.startTransaction()
       , y = page.cursor.y
     footer.height = 0
-    footer.render(page, this.innerWidth)
+    footer.render(page, this.width)
     var height = y - page.cursor.y
     transaction.rollback()
     page.cursor.y = this.padding.bottom + height
-    footer.render(page, this.innerWidth)
+    footer.render(page, this.width)
     page.cursor.y = y
     footer.height = height
   }
@@ -770,7 +780,7 @@ Document.prototype.toString = function() {
   this.objects = [this.catalog, this.pages.tree]
   
   this.pagebreak()
-  this.render()
+  this.render(this.cursor)
   this.subsets.forEach(function(subset) {
     subset.embed(self)
   })
@@ -786,6 +796,10 @@ Document.prototype.toString = function() {
   buf += '%\xFF\xFF\xFF\xFF\n'
 
   buf += '\n'
+
+  this.objects.forEach(function(obj, i) {
+    obj.id = i + 1
+  })
   
   // body
   this.objects.forEach(function(object) {
@@ -898,8 +912,8 @@ var Base64 = {
       
       // workaround to not encode UTF8 characters
       // TODO: improve ...
-      // utftext += String.fromCharCode(Math.min(c, 0xff))
-      // continue
+      utftext += String.fromCharCode(Math.min(c, 0xff))
+      continue
 
       if (c < 128) {
         utftext += String.fromCharCode(c);
@@ -1109,10 +1123,10 @@ TTFFont.Subset.prototype.embed = function(doc) {
     , hex = asHex(data)
   
   var file = new PDFStream(doc.createObject())
-  file.object.prop('Length', hex.length)
+  file.object.prop('Length', hex.length + 1)
   file.object.prop('Length1', data.byteLength)
   file.object.prop('Filter', 'ASCIIHexDecode')
-  file.content = hex + '\n'
+  file.content = hex + '>\n'
   descriptor.prop('FontFile2', file.toReference())
 }
 
@@ -1146,8 +1160,8 @@ var Fragment = module.exports = function(doc, opts) {
   
   this.doc = doc
   
-  this.width   = this.opts.width   || 612
-  if (!this.opts.padding) this.opts.padding = { top: 20, right: 40, bottom: 20, left: 40 }
+  this.width   = this.opts.width || 612
+  if (!this.opts.padding) this.opts.padding = { top: 0, right: 0, bottom: 0, left: 0 }
   this.padding = new Padding(this)
   
   this.defaultFont = this.doc.defaultFont
@@ -1204,7 +1218,7 @@ Object.defineProperties(Fragment.prototype, {
   maxWidth: {
     enumerable: true,
     get: function() {
-      return Math.max.apply(Math, this.contents.map(function(content) {
+      return this.opts.width || Math.max.apply(Math, this.contents.map(function(content) {
         return content.maxWidth
       }))
     }
@@ -1220,14 +1234,28 @@ Object.defineProperties(Fragment.prototype, {
 })
 
 Fragment.prototype.pagebreak = function() {
-  return this.doc.pagebreak()
+  var page = this.doc.pagebreak()
+  this.doc.cursor.cursor.x += this.padding.left
+  return page
 }
 
 Fragment.prototype.render = function(page, width) {
-  var self = this
+  var x = page.cursor.x
+  page.cursor.x += this.padding.left
+  if (width) width = width - this.padding.right - this.padding.left
+  
+  if ('top' in this.opts && ((this.doc.height - this.opts.top) < page.cursor.y || this.opts.position === 'force')) {
+    page.cursor.y = this.doc.height - this.opts.top
+  }
+  var self = this, y = page.cursor.y
   this.contents.forEach(function(content) {
     content.render(self.doc.cursor, width || self.innerWidth)
   })
+  if ('minHeight' in this.opts && this.doc.cursor === page && (y - this.opts.minHeight) < page.cursor.y) {
+    page.cursor.y = y - this.opts.minHeight
+  }
+  
+  page.cursor.x = x
 }
 
 Fragment.prototype.registerFont = function(font) {
@@ -1250,7 +1278,7 @@ Fragment.prototype.fragment = function(opts, definition) {
     opts = {}
   }
   
-  var fragment = new Fragment(this, opts)
+  var fragment = new Fragment(this.doc, opts)
   definition.call(fragment, fragment)
   this.contents.push(fragment)
   
@@ -1345,7 +1373,7 @@ var PDFReference  = require('./reference')
   , PDFDictionary = require('./dictionary')
 
 var PDFObject = module.exports = function(id, rev) {
-  this.id         = id
+  this.id         = id || null
   this.rev        = rev || 0
   this.properties = new PDFDictionary()
   this.reference  = new PDFReference(this)
@@ -1390,7 +1418,7 @@ var PDFStream = module.exports = function(object) {
 
 PDFStream.prototype.writeLine = function(str) {
   this.content += str + '\n'
-  this.object.prop('Length', this.content.length)
+  this.object.prop('Length', this.content.length - 1)
 }
 
 PDFStream.prototype.toReference = function() {
@@ -1443,7 +1471,7 @@ var Page = module.exports = function(doc, parent) {
   
   this.cursor = {
     y: this.doc.height - this.doc.opts.padding.top,
-    x: this.doc.padding.left
+    x: 0
   }
                     
   this.object.addProperty('Parent', parent.toReference())
