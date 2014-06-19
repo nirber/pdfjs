@@ -26,7 +26,7 @@ Early development stage, i.e., not well tested.
 var Document = require('pdfjs')
 ```
 
-### new Document(font)
+### new Document(font, [opts])
 
 **Arguments:**
 
