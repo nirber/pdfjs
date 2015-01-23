@@ -17,7 +17,7 @@ pdfjs 0.8 contains a rewritten layout engine (layout engine of pdfjs `<=0.5` rea
 ### Features
 
 - Text (many formatting options)
-- Images (JPEGs, **PDFs**)
+- Images (JPEGs, other **PDFs**)
 - Tables (fixed layout, header row, before page break rows)
 - Header & Footer
 - TTF Font embedding (as CID fonts, i.e., support for fonts with large character sets)

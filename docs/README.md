@@ -2,7 +2,7 @@
 
 ### pdfjs.createDocument([opts])
 
-Creates a new PDF document.
+Creates a new [PDF document](document.md).
 
 **Arguments:**
 
