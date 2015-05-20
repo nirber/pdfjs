@@ -12,8 +12,8 @@ exports.create = function() {
   return {
     font: {
       opensans: {
-        regular: pdfjs.createTTFFont(openSansRegular),
-        bold:    pdfjs.createTTFFont(openSansBold)
+        regular: pdfjs.createFont(openSansRegular),
+        bold:    pdfjs.createFont(openSansBold)
       }
     },
     image: {

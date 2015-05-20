@@ -31,7 +31,7 @@ var doc = new pdfjs.Document({
 - **A4** - 210mm × 297mm (8.27in × 11.7in) = 595.296 x 841.896
 - **American Letter** - 215.9mm × 279.4mm (8.5in × 11in) = 612 x 792
 
-### new pdfjs.TTFFont(buffer) | pdfjs.createTTFFont(buffer)
+### new pdfjs.TTFFont(buffer) | pdfjs.createFont(buffer)
 
 Creates a new TTF Font object that can be used with PDF documents. The created TTF Font object can be used multiple times.
 

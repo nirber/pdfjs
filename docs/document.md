@@ -33,8 +33,8 @@ doc.text('Lorem ipsum dolor sit amet ...', {
 Load and use the the corresponding font, e.g.:
 
 ```js
-var regular = pdfjs.createTTFFont(read('YourFontRegular.ttf'))
-var bold    = pdfjs.createTTFFont(read('YourFontBold.ttf'))
+var regular = pdfjs.createFont(read('YourFontRegular.ttf'))
+var bold    = pdfjs.createFont(read('YourFontBold.ttf'))
 
 var doc = pdfjs.createDocument({
   font:    regular,
