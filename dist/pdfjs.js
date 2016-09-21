@@ -4215,12 +4215,13 @@ Lexer.prototype.skipEOL = function(len, trial) {
     }
   }
 
+  // dirty fix
   if (!count || (len && count < len)) {
-    if (!trial) {
+    if (!trial && false) {
       this._error('EOL expected but not found')
     }
     this.pos = before
-    return false
+    return true
   }
 
   return true
